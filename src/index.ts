@@ -4,6 +4,7 @@ import express, { Express, Request, Response } from "express"
 import { SnackData } from "./interfaces/SnackData"
 import { CustomerData } from "./interfaces/CustomerData"
 import { PaymentData } from "./interfaces/PaymentData"
+import CheckoutService from "./service/CheckoutService"
 
 dotenv.config()
 
@@ -63,6 +64,8 @@ app.get("/orders/:id", async (req: Request, res: Response) => {
   app.post('/checkout', async (req: checkoutRequest, res: Response) => {
     const { cart, customer, payment } = req.body
 
+    const checkoutService = new CheckoutService()
+    checkoutService.process(cart, customer, payment)
   })
 
 app.listen(port, () => {
