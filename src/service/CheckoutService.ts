@@ -8,7 +8,7 @@ import PaymentService from "./PaymentService"
 export default class CheckoutService {
   private prisma: PrismaClient
 
-  // new CheckoutService()
+  
   constructor() {
     this.prisma = new PrismaClient()
   }
@@ -17,9 +17,8 @@ export default class CheckoutService {
     cart: SnackData[],
     customer: CustomerData,
     payment: PaymentData
-  ) {
-    // TODO: "puxar" os dados de snacks do BD
-    // in: [1,2,3,4]
+  ): Promise<{ id: number; transactionId: string; status: string }> {
+    
     const snacks = await this.prisma.snack.findMany({
       where: {
         id: {
@@ -27,7 +26,7 @@ export default class CheckoutService {
         },
       },
     })
-    // console.log(`snacks`, snacks)
+    
 
     const snacksInCart = snacks.map<SnackData>((snack) => ({
       ...snack,
@@ -37,22 +36,34 @@ export default class CheckoutService {
         cart.find((item) => item.id === snack.id)?.quantity! *
         Number(snack.price),
     }))
-    // console.log(`snacksInCart`, snacksInCart)
-
-    // TODO: registrar os dados do cliente no BD
+    
     const customerCreated = await this.createCustomer(customer)
-    // console.log(`customerCreated`, customerCreated)
+    
 
-    // TODO: criar uma order orderitem
-    const orderCreated = await this.createOrder(snacksInCart, customerCreated)
+    
+    let orderCreated = await this.createOrder(snacksInCart, customerCreated)
     // console.log(`orderCreated`, orderCreated)
 
-    // TODO: processar o pagamento
-    const transaction = await new PaymentService().process(
+    
+    const { transactionId, status } = await new PaymentService().process(
       orderCreated,
       customerCreated,
       payment
     )
+
+    orderCreated = await this.prisma.order.update({
+      where: { id: orderCreated.id },
+      data: {
+        transactionId,
+        status,
+      },
+    })
+
+    return {
+      id: orderCreated.id,
+      transactionId: orderCreated.transactionId!,
+      status: orderCreated.status,
+    }
   }
 
   private async createCustomer(customer: CustomerData): Promise<Customer> {
