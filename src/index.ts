@@ -49,7 +49,7 @@ app.get("/orders/:id", async (req: Request, res: Response) => {
     where: {
       id: +id,
     },
-    include: {customer: true, orderItems: {include: {snack: true}}}
+    include: { customer: true, orderItems: { include: { snack: true } } },
   })
 
   if (!order) return res.status(404).send({ error: "Order not found" })
